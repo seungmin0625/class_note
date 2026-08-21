@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Class Notes — 수업 노트 정리</title>
+<meta name="description" content="Claude 웹개발 수업 필기를 정리하고 언제든 다시 꺼내볼 수 있는 개인 노트 앱" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📝</text></svg>" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div class="app" id="app">
+
+  <!-- ================= SIDEBAR ================= -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-name">Class Notes</span>
+      </div>
+      <button class="icon-btn" id="themeToggle" title="테마 전환" aria-label="다크모드 전환">
+        <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M4.5 12H2.1M21.9 12h-2.4M5.6 5.6l1.7 1.7M16.7 16.7l1.7 1.7M18.4 5.6l-1.7 1.7M7.3 16.7l-1.7 1.7"/></svg>
+        <svg class="icon icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/></svg>
+      </button>
+    </div>
+
+    <button class="new-note-btn" id="newNoteBtn">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      새 노트
+    </button>
+
+    <div class="search-wrap">
+      <svg class="search-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="search" id="searchInput" placeholder="제목, 내용, 태그 검색" autocomplete="off" />
+    </div>
+
+    <nav class="lecture-nav" id="lectureNav" aria-label="노트 필터">
+      <button class="nav-item" data-filter="all">
+        <span class="nav-item-label">전체 노트</span>
+        <span class="count" id="countAll">0</span>
+      </button>
+      <button class="nav-item" data-filter="unfiled">
+        <span class="nav-item-label">미분류</span>
+        <span class="count" id="countUnfiled">0</span>
+      </button>
+
+      <div class="nav-section-title">
+        <span>강의 회차</span>
+        <button class="mini-btn" id="addLectureBtn" title="회차 추가" aria-label="회차 추가">+</button>
+      </div>
+      <div id="lectureList" class="lecture-list"></div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="ghost-btn" id="exportBtn">내보내기</button>
+      <button class="ghost-btn" id="importBtn">가져오기</button>
+      <input type="file" id="importFile" accept="application/json" hidden />
+    </div>
+  </aside>
+
+  <!-- ================= MAIN ================= -->
+  <main class="main">
+
+    <!-- ---- LIST VIEW ---- -->
+    <section class="view view-list" id="listView">
+      <header class="view-header">
+        <div>
+          <h1 id="listTitle">전체 노트</h1>
+          <p class="view-subtitle" id="listSubtitle">아직 작성한 노트가 없어요</p>
+        </div>
+      </header>
+
+      <div class="stats-row" id="statsRow">
+        <div class="stat-card">
+          <span class="stat-value" id="statTotalNotes">0</span>
+          <span class="stat-label">전체 노트</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" id="statLectures">0</span>
+          <span class="stat-label">강의 회차</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" id="statWeek">0</span>
+          <span class="stat-label">이번 주 작성</span>
+        </div>
+      </div>
+
+      <div class="notes-grid" id="notesGrid"></div>
+
+      <div class="empty-state" id="emptyState" hidden>
+        <div class="empty-glyph">📝</div>
+        <h2>수업 노트를 남겨보세요</h2>
+        <p>수업 중 배운 내용을 기록하면 여기 자동으로 저장돼요.<br/>브라우저를 닫아도 사라지지 않아요.</p>
+        <button class="new-note-btn inline" id="emptyStateNewNote">+ 첫 노트 작성하기</button>
+      </div>
+    </section>
+
+    <!-- ---- EDITOR VIEW ---- -->
+    <section class="view view-editor" id="editorView" hidden>
+      <header class="editor-toolbar">
+        <button class="back-btn" id="backBtn">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          목록으로
+        </button>
+        <div class="editor-toolbar-right">
+          <span class="save-indicator" id="saveIndicator">저장됨</span>
+          <button class="icon-btn danger" id="deleteNoteBtn" title="노트 삭제" aria-label="노트 삭제">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4.8c0-.4.4-.8.9-.8h4.2c.5 0 .9.4.9.8V7m-9 0 .7 12.1c0 .5.5.9 1 .9h6.6c.5 0 1-.4 1-.9L17 7"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="editor-body">
+        <input type="text" id="noteTitle" class="note-title-input" placeholder="제목 없음" />
+
+        <div class="editor-meta">
+          <label class="meta-field">
+            <span class="meta-label">회차</span>
+            <select id="noteLecture"></select>
+          </label>
+          <label class="meta-field grow">
+            <span class="meta-label">태그</span>
+            <input type="text" id="noteTags" placeholder="쉼표로 구분 (예: 프롬프트, 복습필요)" />
+          </label>
+        </div>
+
+        <textarea id="noteContent" class="note-content-input" placeholder="오늘 배운 내용을 적어보세요…"></textarea>
+
+        <p class="editor-timestamp" id="editorTimestamp"></p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<template id="lectureItemTemplate">
+  <div class="lecture-item" data-id="">
+    <button class="lecture-item-btn" data-filter="">
+      <span class="lecture-item-name"></span>
+      <span class="count"></span>
+    </button>
+    <div class="lecture-item-actions">
+      <button class="mini-btn" data-action="rename" title="이름 변경" aria-label="이름 변경">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      </button>
+      <button class="mini-btn" data-action="delete" title="회차 삭제" aria-label="회차 삭제">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6 18 18M18 6 6 18"/></svg>
+      </button>
+    </div>
+  </div>
+</template>
+
+<template id="noteCardTemplate">
+  <button class="note-card">
+    <div class="note-card-top">
+      <span class="note-card-lecture"></span>
+      <span class="note-card-date"></span>
+    </div>
+    <h3 class="note-card-title"></h3>
+    <p class="note-card-preview"></p>
+    <div class="note-card-tags"></div>
+  </button>
+</template>
+
+<script src="app.js" defer></script>
+</body>
+</html>
